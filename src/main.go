@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const version = "0.2"
+const version = "0.3"
 
 func handleConnection(config Config, w http.ResponseWriter, r *http.Request) {
 
