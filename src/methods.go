@@ -37,29 +37,42 @@ func rewritePlain(config Config) Method {
 
 		log.Print("Rewriting Plain")
 
-		TLSconfig := &tls.Config {
-			Certificates: []tls.Certificate{cert}, 
-			CipherSuites: []uint16{
-				tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
-			},
-			ClientAuth: tls.NoClientCert,  
-			ServerName: r.URL.Hostname(),
-			InsecureSkipVerify: true,
+		var reader *bufio.Reader
+		var connection net.Conn
+
+		if (r.URL.Scheme != "http") {
+
+			TLSconfig := &tls.Config {
+				Certificates: []tls.Certificate{cert}, 
+				CipherSuites: []uint16{
+					tls.TLS_RSA_WITH_AES_128_CBC_SHA256,
+				},
+				ClientAuth: tls.NoClientCert,  
+				ServerName: r.URL.Hostname(),
+				InsecureSkipVerify: true,
+			}
+	
+			tlsConn := tls.Server(clientConn, TLSconfig)
+			tlsConn.Handshake()	
+
+			reader = bufio.NewReader(tlsConn)
+			connection = tlsConn
+			
+		} else {
+
+			reader = bufio.NewReader(clientConn)
+			connection = clientConn
 		}
 
-		tlsConn := tls.Server(clientConn, TLSconfig)
-		tlsConn.Handshake()	
-
-		reader := bufio.NewReader(tlsConn)
 		request, err := http.ReadRequest(reader)
-
+		
 		if err != nil {
 			log.Fatalf("error: %v", err)
 		}
 
 		request.Write(serverConn)
 		
-		go io.Copy(serverConn, tlsConn)
-		io.Copy(tlsConn, serverConn)
+		go io.Copy(serverConn, connection)
+		io.Copy(connection, serverConn)
 	}
 }
