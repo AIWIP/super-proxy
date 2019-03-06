@@ -39,7 +39,8 @@ rules:
   # if a request matches multiple rules the proxy will execute the first one it finds in this
   # list.
   #
-  # target bbc.com
+  # target: bbc.com # Target any request for bbc.co.uk
+  # target: bbc.com:8080 # Target requests over port 8080 for bbc.co.uk
   #
   # The destination field declares the hostname and port number the traffic
   # should be redirected to.
