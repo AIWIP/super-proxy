@@ -1,6 +1,7 @@
 package main 
 
 import (
+	"fmt"
 	"net/url"
 )
 
@@ -48,7 +49,10 @@ func (c Config) routeForTarget(target *url.URL) Route {
 
 	for _, rule := range c.Rules {
 
-		if rule.Target == target.Hostname() {
+		hostname := target.Hostname()
+		address := fmt.Sprintf("%v:%v", hostname, target.Port())
+
+		if rule.Target == target.Hostname() || rule.Target == address {
 
 			return Route {
 				rule.Dest,
