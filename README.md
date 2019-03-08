@@ -21,6 +21,8 @@ super-proxy -config <path to config> -key <path to rootCA key> -cert <path to ro
 
 Super Proxy currently leaves generating the certificates for TLS connections to you.
 
+### Avaliable commands
+
 To see all avaliable commands run:
 
 ```
