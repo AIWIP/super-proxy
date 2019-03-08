@@ -1,6 +1,6 @@
 # Super Proxy
 
-Super Proxy is a HTTP proxy which supports proxying HTTP, HTTPS and other TCP based protocols, 
+Super Proxy is a HTTP proxy which supports proxying HTTP, HTTPS and other TCP based protocols,
 this project has three goals:
 
 - Production Ready:  Written in high-performance Go code
@@ -17,6 +17,10 @@ Run the followin command to see instructions on how to run the proxy
 
 ```
 super-proxy --help
+```
+
+```
+./super-proxy -config  ~/Projects/printt/printt-cloud-print/src/proxy/conf/config.yaml -key ~/Projects/printt/printt-cloud-print/src/proxy/conf/rootCA.key -cert ~/Projects/printt/printt-cloud-print/src/proxy/conf/rootCA.crt
 ```
 
 ### Creating a configuration
@@ -53,7 +57,7 @@ rules:
   # - ForwardTransparent: Transparently forwards the traffic to the destination without
   #                       touching it
   #
-  # - RewritePlain: Strips HTTP traffic of any TLS encyption, rewrites the HTTP request 
+  # - RewritePlain: Strips HTTP traffic of any TLS encyption, rewrites the HTTP request
   #                 so that it's for the destination and then forwards it
   #
   # If no method is provided then the proxy defaults to ForwardTransparent
