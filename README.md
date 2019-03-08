@@ -13,14 +13,18 @@ this project has three goals:
 
 ### Running the proxy
 
-Run the followin command to see instructions on how to run the proxy
+To start the proxy you use the following command:
+
+```
+super-proxy -config <path to config> -key <path to rootCA key> -cert <path to rootCA cert> 
+```
+
+Super Proxy currently leaves generating the certificates for TLS connections to you.
+
+To see all avaliable commands run:
 
 ```
 super-proxy --help
-```
-
-```
-./super-proxy -config  ~/Projects/printt/printt-cloud-print/src/proxy/conf/config.yaml -key ~/Projects/printt/printt-cloud-print/src/proxy/conf/rootCA.key -cert ~/Projects/printt/printt-cloud-print/src/proxy/conf/rootCA.crt
 ```
 
 ### Creating a configuration
