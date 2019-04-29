@@ -1,6 +1,7 @@
 package main 
 
 import (
+	"bufio"
 	"fmt"
 	"flag"
 	"io"
@@ -9,54 +10,58 @@ import (
 	
 	"net"
 	"net/http"
-
 	"gopkg.in/yaml.v2"
 )
 
 const version = "0.4"
 
-func handleConnection(config Config, w http.ResponseWriter, r *http.Request) {
+func handleConnection(config Config, conn net.Conn) {
 
-	hijacker, ok := w.(http.Hijacker)
+	defer conn.Close()
 
-	if !ok {
-		log.Fatalf("error: failed to hijack connection")
-	}
+	reader := bufio.NewReader(conn)
 
-	if r.Method == http.MethodConnect {
-		w.WriteHeader(http.StatusOK)
-	}
+	for {
+		request, err := http.ReadRequest(reader)
 
-	clientConn, _, err := hijacker.Hijack()
+		log.Print(request)
 
-	if err != nil {
-        log.Fatalf("error: %v", err)
-	}
+		if err != nil {
+			log.Print("error: %v", err)
+			conn.Write([]byte("HTTP/1.0 500 Server Error\r\n\r\n"))
+			return
+		}
 
-	route := config.routeForTarget(r.URL)
-	log.Print(r.URL.String() + " -> "  + route.Dest)
+		route := config.routeForTarget(request.URL)
+		log.Print(request.URL.String() + " -> "  + route.Dest)
 
-	serverConn, err := net.Dial("tcp", route.Dest)
+		serverConn, err := net.Dial("tcp", route.Dest)
 
-	if err != nil {
-        log.Fatalf("error: %v", err)
-	}
-
-	if r.Method == http.MethodConnect {
-
-		go route.runMethod(r, clientConn, serverConn)
-
-	} else {
+		if err != nil {
+			log.Print("error: %v", err)
+			conn.Write([]byte("HTTP/1.0 500 Server Error\r\n\r\n"))
+			return
+		}
 
 		in, out := net.Pipe()
-		
-		go route.runMethod(r, out, serverConn)
 
-		r.Write(in)
-		io.Copy(clientConn, in)
+		if request.Method == http.MethodConnect {
 
-		in.Close()
-		out.Close()
+			log.Print("CONNECT")
+
+			conn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
+			go route.runMethod(request, out, serverConn)
+			go io.Copy(in, conn)
+
+		} else {
+
+			log.Print("DIRECT")
+
+			go route.runMethod(request, out, serverConn)
+			request.Write(in)
+		}
+
+		io.Copy(conn, in)
 	}
 }
 
@@ -113,16 +118,21 @@ func main() {
 	log.Print("")
 	log.Print("Listening On Port ", host)
 
-	server := &http.Server{
-        Addr: host,
-        Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			handleConnection(config, w, r)
-        }),
-    }
+	ln, err := net.Listen("tcp", host)
 
-	err = server.ListenAndServe()
+	ln = ln
 
 	if err != nil {
 		log.Fatalf("error: %v", err)
+	}
+
+	for {
+		conn, err := ln.Accept()
+
+		if err != nil {
+			log.Fatalf("error: %v", err)
+		}
+
+		go handleConnection(config, conn)
 	}
 }
