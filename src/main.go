@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"flag"
-	"io"
 	"io/ioutil"
 	"log"
 	
@@ -13,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const version = "0.4"
+const version = "0.5"
 
 func handleConnection(config Config, conn net.Conn) {
 
@@ -35,33 +34,19 @@ func handleConnection(config Config, conn net.Conn) {
 		route := config.routeForTarget(request.URL)
 		log.Print(request.URL.String() + " -> "  + route.Dest)
 
-		serverConn, err := net.Dial("tcp", route.Dest)
-
-		if err != nil {
-			log.Print("error: %v", err)
-			conn.Write([]byte("HTTP/1.0 500 Server Error\r\n\r\n"))
-			return
-		}
-
-		in, out := net.Pipe()
-
 		if request.Method == http.MethodConnect {
 
 			log.Print("CONNECT")
 
 			conn.Write([]byte("HTTP/1.0 200 OK\r\n\r\n"))
-			go route.runMethod(request, out, serverConn)
-			go io.Copy(in, conn)
+			go route.runMethod(request, conn)
 
 		} else {
 
 			log.Print("DIRECT")
-
-			go route.runMethod(request, out, serverConn)
-			request.Write(in)
+			conn.Write([]byte("HTTP/1.0 415 OK\r\n\r\n"))
+			conn.Close()
 		}
-
-		io.Copy(conn, in)
 	}
 }
 
@@ -111,6 +96,14 @@ func main() {
 
 	for _, rule := range config.Rules {
 		log.Print(rule.Target, " -> ", rule.Dest)
+	}
+
+	log.Print("")
+	log.Print("Whitelisted User Agents:")
+	log.Print("")
+
+	for _, pattern := range config.WhitelistedUseragents {
+		log.Print("- ", pattern)
 	}
 
 	host := ":" + config.Port

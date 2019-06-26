@@ -18,6 +18,7 @@ type Config struct {
 
 	Rules []Rule		`yaml:"rules"`
 	Methods map[string]Method
+	WhitelistedUseragents []string `yaml:"whitelisted_useragents"`
 }
 
 func NewConfig() Config {
@@ -27,6 +28,7 @@ func NewConfig() Config {
 		"",
 		make([]Rule, 0),
 		make(map[string]Method),
+		make([]string, 0),
 	}
 }
 
@@ -34,15 +36,19 @@ func (c Config) registerMethod(name string, constructor MethodConstructor) {
 	c.Methods[name] = constructor(c)
 }
 
-func (c Config) methodForRule(rule Rule) Method {
+func (c Config) methodForRule(rule *Rule) Method {
 
-	method := c.Methods[rule.Method]
+	method := forwardTransparent(c)
 
-	if method == nil {
-		return forwardTransparent(c)
+	if rule != nil {
+		possibleMethod := c.Methods[rule.Method]
+
+		if possibleMethod != nil {
+			method = possibleMethod
+		}
 	}
 
-	return method
+	return checkWhitelistBeforeRunningMethod(c, method)
 }
 
 func (c Config) routeForTarget(target *url.URL) Route {
@@ -56,7 +62,7 @@ func (c Config) routeForTarget(target *url.URL) Route {
 
 			return Route {
 				rule.Dest,
-				c.methodForRule(rule),
+				c.methodForRule(&rule),
 			}
 		}
 	}
@@ -72,6 +78,6 @@ func (c Config) routeForTarget(target *url.URL) Route {
 
 	return Route{
 		address,
-		forwardTransparent(c),
+		c.methodForRule(nil),
 	}
 }

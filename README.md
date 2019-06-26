@@ -78,6 +78,13 @@ rules:
     dest: fake.gmail.com:80
   - target: github.com
     dest: fake.github.com:80
+
+# You can block clients based on their User Agent.
+#
+# If you want to allow all clients delete this section.
+#
+whitelisted_useragents:
+  - firefox
 ```
 
 ## Building From Source
